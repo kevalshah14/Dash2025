@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 
 import { MessageIcon, VercelIcon } from './icons';
+import { addDocument } from '@/app/(chat)/actions';
 
 export const Overview = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,6 +19,7 @@ export const Overview = () => {
     // Handle document submission here
     const content = type === 'url' ? url : text;
     console.log('Submitting document:', { type, content });
+    await addDocument({ type, content });
     setIsOpen(false);
   };
 

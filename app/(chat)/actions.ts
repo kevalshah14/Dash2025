@@ -63,52 +63,83 @@ async function chunkText(text: string) {
   const chunks = text.match(/.{1,1000}/g);
   return chunks?.map((chunk) => chunk.trim()) ?? [];
 }
-
 export async function addDocument({ type, content }: { type: 'url' | 'text', content: string }) {
-  // step 1. check if it's a URL or text
-
-  // step 2: if it's a url, run it through something like this https://r.jina.ai/https://dhravya.dev
-
-  // now that we have text, we can add it in the database
-  // and we can chunk it into 1000 character chunks
-  // and we can embed it using openai
-  // and we can save the embedding to the database (documentChunk table)
-  // and we can return the document id to the client
-
   const session = await auth();
 
   if (!session || !session.user) {
     throw new Error('Unauthorized');
   }
 
+  let processedContent = content;
+  let title = 'User uploaded document';
+
+  if (type === 'url') {
+    try {
+      // Fetch content using r.jina.ai API
+      const jinaResponse = await fetch(`https://r.jina.ai/${content}`);
+      if (!jinaResponse.ok) {
+        throw new Error('Failed to fetch URL content');
+      }
+      const jinaData = await jinaResponse.text();
+      
+      // Extract content and title from Jina response
+      processedContent = jinaData;
+      title =  'Web Document';
+
+      if (!processedContent) {
+        throw new Error('No content extracted from URL');
+      }
+    } catch (err) {
+      const error = err as Error;
+      throw new Error(`Failed to process URL: ${error.message}`);
+    }
+  }
+
+  // Create document record
   const doc = await db.insert(document).values({
-    title: 'User uploaded document',
-    kind: 'text',
-    content,
+    title,
+    kind: 'text', // Always store as text since we've processed the URL content
+    content: processedContent,
     userId: session.user.id!,
     createdAt: new Date(),
-  }).returning()
+  }).returning();
 
   const documentId = doc[0].id;
 
-  const chunks = await chunkText(content);
+  // Split content into chunks
+  const chunks = await chunkText(processedContent);
 
+  // Generate embeddings for chunks
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
 
-  const embeddings = await openai.embeddings.create({
-    model: 'text-embedding-3-large',
-    input: chunks,
-  });
+  // Process chunks in batches to avoid rate limits
+  const batchSize = 100;
+  const chunkedChunks = [];
 
-  const chunkedChunks = chunks.map((chunk, index) => ({
-    documentId,
-    content: chunk,
-    chunkVector: embeddings.data[index].embedding,
-  }));
+  for (let i = 0; i < chunks.length; i += batchSize) {
+    const batchChunks = chunks.slice(i, i + batchSize);
+    
+    const embeddings = await openai.embeddings.create({
+      model: 'text-embedding-3-large',
+      input: batchChunks,
+      dimensions: 1536,
+    });
 
-  await db.insert(documentChunk).values(chunkedChunks);
+    const batchChunkedChunks = batchChunks.map((chunk, index) => ({
+      documentId,
+      content: chunk,
+      chunkVector: embeddings.data[index].embedding,
+    }));
+
+    chunkedChunks.push(...batchChunkedChunks);
+  }
+
+  // Save chunks with embeddings
+  if (chunkedChunks.length > 0) {
+    await db.insert(documentChunk).values(chunkedChunks);
+  }
 
   return documentId;
 }

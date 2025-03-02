@@ -89,6 +89,8 @@ export async function POST(request: Request) {
     .orderBy(desc(similarity))
     .limit(10);
 
+  console.log({similarChunks});
+
   // Add context from similar chunks
   const context = similarChunks.map(chunk => chunk.content).join('\n');
 
