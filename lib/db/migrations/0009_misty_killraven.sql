@@ -1,0 +1,1 @@
+ALTER TABLE "Message" ALTER COLUMN "confidence" SET DATA TYPE real;
