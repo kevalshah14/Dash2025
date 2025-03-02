@@ -60,8 +60,22 @@ export async function updateChatVisibility({
 }
 
 async function chunkText(text: string) {
-  const chunks = text.match(/.{1,1000}/g);
-  return chunks?.map((chunk) => chunk.trim()) ?? [];
+  // Use regex with 's' flag to properly handle newlines and whitespace
+  const regex = new RegExp('.{1,1000}', 'gs');
+  const chunks = text.match(regex);
+
+  // Process chunks to preserve formatting and handle edge cases
+  return chunks?.map(chunk => {
+    // Trim whitespace but preserve newlines within chunk
+    const trimmed = chunk.replace(/^\s+|\s+$/g, '');
+    
+    // Ensure we don't split in middle of words
+    const lastSpace = trimmed.lastIndexOf(' ');
+    if (lastSpace > 0 && lastSpace < trimmed.length - 1) {
+      return trimmed.substring(0, lastSpace);
+    }
+    return trimmed;
+  }).filter(chunk => chunk.length > 0) ?? [];
 }
 export async function addDocument({ type, content }: { type: 'url' | 'text', content: string }) {
   const session = await auth();

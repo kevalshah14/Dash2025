@@ -10,6 +10,7 @@ import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 import type { Message as DBMessage, Document } from '@/lib/db/schema';
+import { Source } from '@/components/sources';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -57,8 +58,8 @@ function addToolMessageToChat({
   messages,
 }: {
   toolMessage: CoreToolMessage;
-  messages: Array<Message>;
-}): Array<Message> {
+  messages: Array<Message & { sources: Source[] }>;
+}): Array<Message & { sources: Source[] }> {
   return messages.map((message) => {
     if (message.toolInvocations) {
       return {
@@ -87,8 +88,8 @@ function addToolMessageToChat({
 
 export function convertToUIMessages(
   messages: Array<DBMessage>,
-): Array<Message> {
-  return messages.reduce((chatMessages: Array<Message>, message) => {
+): Array<Message & { sources: Source[] }> {
+  return messages.reduce((chatMessages: Array<Message & { sources: Source[] }>, message) => {
     if (message.role === 'tool') {
       return addToolMessageToChat({
         toolMessage: message as CoreToolMessage,
@@ -125,10 +126,11 @@ export function convertToUIMessages(
       content: textContent,
       reasoning,
       toolInvocations,
+      sources: message.sources as Source[],
     });
 
     return chatMessages;
-  }, []);
+  }, [] as Array<Message & { sources: Source[] }>);
 }
 
 type ResponseMessageWithoutId = CoreToolMessage | CoreAssistantMessage;

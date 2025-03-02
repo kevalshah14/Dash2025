@@ -64,7 +64,7 @@ export async function POST(request: Request) {
   }
 
   await saveMessages({
-    messages: [{ ...userMessage, createdAt: new Date(), chatId: id }],
+    messages: [{ ...userMessage, createdAt: new Date(), chatId: id, sources: [] }],
   });
 
   // Generate embedding for the query
@@ -81,11 +81,10 @@ export async function POST(request: Request) {
       id: documentChunk.id,
       documentId: documentChunk.documentId,
       content: documentChunk.content,
-      chunkVector: documentChunk.chunkVector,
       similarity
     })
     .from(documentChunk)
-    .where(gt(similarity, 0.7))
+    .where(gt(similarity, 0.4))
     .orderBy(desc(similarity))
     .limit(10);
 
@@ -141,6 +140,7 @@ export async function POST(request: Request) {
                     role: message.role,
                     content: message.content,
                     createdAt: new Date(),
+                    sources: similarChunks,
                   };
                 }),
               });

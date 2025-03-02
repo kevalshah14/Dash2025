@@ -2,7 +2,7 @@
 
 import type { Attachment, Message } from 'ai';
 import { useChat } from 'ai/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 
 import { ChatHeader } from '@/components/chat-header';
@@ -25,13 +25,17 @@ export function Chat({
   isReadonly,
 }: {
   id: string;
-  initialMessages: Array<Message>;
+  initialMessages: Array<Message & { sources: Source[] }>;
   selectedChatModel: string;
   selectedVisibilityType: VisibilityType;
   isReadonly: boolean;
 }) {
   const { mutate } = useSWRConfig();
-  const [sources, setSources] = useState<Source[]>([]);
+  const [sources, setSources] = useState<Source[]>(initialMessages.flatMap(message => message.sources).filter(source => source.documentId !== null));
+
+  useEffect(() => {
+    console.log(sources);
+  }, [sources]);
 
   const {
     messages,
@@ -60,17 +64,20 @@ export function Chat({
   });
 
   // Parse streaming results for sources
-  if ((results as any)?.data) {
-    const data = (results as any).data;
-    if (data.type === 'search') {
-      try {
-        const searchResults = JSON.parse(data.results);
-        setSources(searchResults);
-      } catch (e) {
-        console.error('Failed to parse search results:', e);
-      }
+  useEffect(() => {
+    if (results) {
+      results.forEach((result: any) => {
+        if (result?.type === 'search') {
+          try {
+            const searchResults = JSON.parse(result.results);
+            setSources(searchResults);
+          } catch (e) {
+            console.error('Failed to parse search results:', e);
+          }
+        }
+      });
     }
-  }
+  }, [results]);
 
   const { data: votes } = useSWR<Array<Vote>>(
     `/api/vote?chatId=${id}`,
@@ -102,7 +109,7 @@ export function Chat({
             isSourcesVisible={sources.length > 0}
           />
 
-        <form className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
+        <form className={`flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl ${sources.length > 0 ? '-translate-x-[200px]' : ''}`}>
           {!isReadonly && (
             <MultimodalInput
               chatId={id}
