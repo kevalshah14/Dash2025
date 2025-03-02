@@ -6,48 +6,71 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import AlertDetails from "@/components/alert-details"
 import { Alert } from "@/types/alert"
-  
 
 const sampleAlerts: Alert[] = [
   {
-    id: "ALT-2023-07-01-001",
-    title: "Potential Cyber Intrusion Detected",
-    severity: "high",
-    timestamp: "2023-07-01T10:30:00Z",
-    description: "Multiple failed login attempts detected from unusual IP ranges.",
+    id: "LLM-ERR-2025-03-02-001",
+    title: "Historical Fact Error: Incorrect Date for Independence",
+    severity: "low",
+    timestamp: "2025-03-02T08:30:00Z",
+    description:
+      "The LLM generated an incorrect date for the signing of the Declaration of Independence, flagging potential misinformation risks.",
     sources: [
       {
-        name: "Network Logs",
-        type: "internal",
-        reliability: 0.95,
-        timestamp: "2023-07-01T10:28:00Z",
+        name: "User Report",
+        type: "external",
+        reliability: 0.8,
+        timestamp: "2025-03-02T08:28:00Z",
       },
       {
-        name: "Threat Intelligence Feed",
-        type: "external",
-        reliability: 0.85,
-        timestamp: "2023-07-01T10:29:30Z",
+        name: "Internal Validation",
+        type: "internal",
+        reliability: 0.95,
+        timestamp: "2025-03-02T08:29:30Z",
       },
     ],
   },
   {
-    id: "ALT-2023-07-02-002",
-    title: "Suspicious Border Crossing Pattern",
-    severity: "medium",
-    timestamp: "2023-07-02T15:45:00Z",
-    description: "Unusual increase in border crossings at non-standard hours.",
+    id: "LLM-ERR-2025-03-02-002",
+    title: "Scientific Data Misinformation: Erroneous Climate Statistic",
+    severity: "high",
+    timestamp: "2025-03-02T09:45:00Z",
+    description:
+      "The LLM incorrectly reported a statistical anomaly in climate data, which could lead to misinterpretation of trends and risks in scientific communication.",
     sources: [
       {
-        name: "Border Patrol Reports",
+        name: "Peer Review",
         type: "internal",
         reliability: 0.9,
-        timestamp: "2023-07-02T15:40:00Z",
+        timestamp: "2025-03-02T09:40:00Z",
       },
       {
-        name: "Satellite Imagery",
+        name: "Expert Feedback",
+        type: "external",
+        reliability: 0.85,
+        timestamp: "2025-03-02T09:43:00Z",
+      },
+    ],
+  },
+  {
+    id: "LLM-ERR-2025-03-02-003",
+    title: "Geographical Misinformation: Incorrect Capital",
+    severity: "low",
+    timestamp: "2025-03-02T10:00:00Z",
+    description:
+      "The LLM mistakenly identified the capital of Australia, potentially misleading users in geographical contexts.",
+    sources: [
+      {
+        name: "User Feedback",
+        type: "external",
+        reliability: 0.75,
+        timestamp: "2025-03-02T09:55:00Z",
+      },
+      {
+        name: "Internal Check",
         type: "internal",
-        reliability: 0.8,
-        timestamp: "2023-07-02T15:43:00Z",
+        reliability: 0.95,
+        timestamp: "2025-03-02T09:57:00Z",
       },
     ],
   },
@@ -76,7 +99,7 @@ export default function DHSDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-1">
           <CardHeader>
-            <CardTitle>Active Alerts</CardTitle>
+            <CardTitle>Flagged LLM Outputs</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
@@ -111,4 +134,3 @@ export default function DHSDashboard() {
     </div>
   )
 }
-
