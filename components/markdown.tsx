@@ -50,7 +50,7 @@ const components: Partial<Components> = {
             // @ts-ignore
             props.setSelectedSourceId?.(sourceId);
           }}
-          className="bg-yellow-100 dark:bg-yellow-900/30 px-0.5 rounded cursor-pointer hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
+          className="bg-yellow-400 dark:bg-yellow-700/40 px-0.5 rounded cursor-pointer hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
         >
           {children}
         </button>
