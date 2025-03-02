@@ -78,7 +78,7 @@ export async function POST(request: Request) {
   const similarity = sql<number>`1 - (${cosineDistance(documentChunk.chunkVector, queryEmbedding.data[0].embedding)})`;
   const similarChunks = await db
     .select({
-      id: documentChunk.id,
+      sourceId: documentChunk.id,
       documentId: documentChunk.documentId,
       content: documentChunk.content,
       similarity
@@ -90,8 +90,6 @@ export async function POST(request: Request) {
 
   console.log({similarChunks});
 
-  // Add context from similar chunks
-  const context = similarChunks.map(chunk => chunk.content).join('\n');
 
   return createDataStreamResponse({
     execute: (dataStream) => {
@@ -101,7 +99,7 @@ export async function POST(request: Request) {
       });
       const result = streamText({
         model: myProvider.languageModel(selectedChatModel),
-        system: systemPrompt({ selectedChatModel }) + `\n\nUse the following context to help answer questions:\n${context}`,
+        system: systemPrompt({ selectedChatModel }) + `\n\n\nUse the following context to help answer questions:\n${JSON.stringify(similarChunks)}. For every single thing you say, you must inline cite the source. Do inline citaiton using: [text related to chunk](#chunk-id). REMEMBER THIS. INLINE CITE EVERYTHING. REMEMBER TO USE #CHUNKDID. BE very granular with the citations. like, word or phrase level.`,
         messages,
         maxSteps: 5,
         experimental_activeTools:

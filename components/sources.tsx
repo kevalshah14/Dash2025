@@ -1,13 +1,13 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { memo, useMemo, useState } from 'react';
+import { memo, useMemo, useState, useEffect } from 'react';
 import { useWindowSize } from 'usehooks-ts';
 import ReactMarkdown from 'react-markdown';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, X } from 'lucide-react';
 
 export interface Source {
-  id: string;
+  sourceId: string;
   documentId: string;
   content: string;
   chunkVector: number[];
@@ -17,40 +17,54 @@ export interface Source {
 interface SourcesProps {
   sources: Source[];
   isVisible: boolean;
+  setSelectedSourceId: (sourceId: string | null) => void;
+  selectedSourceId?: string;
 }
 
-function PureSources({ sources, isVisible }: SourcesProps) {
+function PureSources({ sources, isVisible, setSelectedSourceId, selectedSourceId }: SourcesProps) {
   const { width: windowWidth } = useWindowSize();
   const isMobile = windowWidth ? windowWidth < 768 : false;
-  const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set());
+  const [expandedSourceIds, setExpandedSourceIds] = useState<Set<string>>(new Set());
 
-  const uniqueSources = useMemo(() => {
-    const sourcesByDoc = new Map<string, Source>();
-    
-    sources.forEach(source => {
-      const existing = sourcesByDoc.get(source.documentId);
-      if (!existing || source.similarity > existing.similarity) {
-        sourcesByDoc.set(source.documentId, source);
-      }
-    });
+  const displayedSources = useMemo(() => {
+    if (!selectedSourceId) {
+      // When no source is selected, show the best source per document
+      const sourcesByDoc = new Map<string, Source>();
+      sources.forEach(source => {
+        const existing = sourcesByDoc.get(source.documentId);
+        if (!existing || source.similarity > existing.similarity) {
+          sourcesByDoc.set(source.documentId, source);
+        }
+      });
+      return Array.from(sourcesByDoc.values());
+    } else {
+      // When a source is selected, show all sources from that document
+      const selectedSource = sources.find(s => s.sourceId === selectedSourceId);
+      if (!selectedSource) return [];
+      return sources.filter(s => s.documentId === selectedSource.documentId)
+        .sort((a, b) => b.similarity - a.similarity);
+    }
+  }, [sources, selectedSourceId]);
 
-    return Array.from(sourcesByDoc.values());
-  }, [sources]);
+  // Reset expanded sources when selected source changes
+  useEffect(() => {
+    setExpandedSourceIds(new Set());
+  }, [selectedSourceId]);
 
-  const toggleSource = (id: string) => {
-    setExpandedSources(prev => {
+  const toggleSource = (sourceId: string) => {
+    setExpandedSourceIds(prev => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
+      if (next.has(sourceId)) {
+        next.delete(sourceId);
       } else {
-        next.add(id);
+        next.add(sourceId);
       }
       return next;
     });
   };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isVisible && (
         <motion.aside
           className="fixed dark:bg-muted bg-background h-dvh w-[400px] flex flex-col overflow-hidden border-l dark:border-zinc-700 border-zinc-200 right-0 top-0"
@@ -60,46 +74,69 @@ function PureSources({ sources, isVisible }: SourcesProps) {
           transition={{ type: "spring", damping: 20 }}
         >
           <header className="p-4 border-b dark:border-zinc-700 border-zinc-200">
-            <h2 className="text-lg font-medium">Related Sources</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-medium">Related Sources</h2>
+              {selectedSourceId && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    Showing all sources from document
+                  </span>
+                  <button
+                    onClick={() => setSelectedSourceId(null)}
+                    className="hover:bg-muted rounded-full p-1"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
           </header>
 
           <main className="flex flex-col gap-4 p-4 overflow-y-auto">
-            <AnimatePresence mode="popLayout">
-              {uniqueSources.map((source) => (
+            <AnimatePresence initial={false} mode="popLayout">
+              {displayedSources.map((source) => (
                 <motion.article
-                  key={source.id}
-                  className="rounded-lg border bg-card p-4"
-                  layout
+                  key={source.sourceId}
+                  className={`rounded-lg border bg-card p-4 ${selectedSourceId === source.documentId ? 'ring-2 ring-primary' : ''}`}
+                  layout="position"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ 
+                    duration: 0.2,
+                    layout: { duration: 0.3 }
+                  }}
                 >
                   <div 
                     className="flex items-center justify-between cursor-pointer"
-                    onClick={() => toggleSource(source.id)}
+                    onClick={() => toggleSource(source.sourceId)}
                   >
                     <div className="text-sm text-muted-foreground">
                       Similarity: {(source.similarity * 100).toFixed(1)}%
                     </div>
-                    {expandedSources.has(source.id) ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
+                    <motion.div
+                      animate={{ rotate: expandedSourceIds.has(source.sourceId) ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
                       <ChevronDown className="h-4 w-4" />
-                    )}
+                    </motion.div>
                   </div>
                   <motion.div 
-                    className="relative prose dark:prose-invert max-w-none text-sm mt-2"
+                    className="relative prose dark:prose-invert max-w-none text-sm mt-2 overflow-hidden"
                     initial={false}
                     animate={{ 
-                      height: expandedSources.has(source.id) ? "auto" : "4.5em"
+                      height: expandedSourceIds.has(source.sourceId) ? "auto" : "4.5em",
+                      opacity: expandedSourceIds.has(source.sourceId) ? 1 : 0.7
                     }}
-                    transition={{ type: "spring", damping: 20 }}
+                    transition={{ 
+                      height: { duration: 0.3 },
+                      opacity: { duration: 0.2 }
+                    }}
                   >
                     <ReactMarkdown>
                       {source.content}
                     </ReactMarkdown>
-                    {!expandedSources.has(source.id) && (
+                    {!expandedSourceIds.has(source.sourceId) && (
                       <div 
                         className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-card to-transparent"
                       />

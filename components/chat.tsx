@@ -33,6 +33,8 @@ export function Chat({
   const { mutate } = useSWRConfig();
   const [sources, setSources] = useState<Source[]>(initialMessages.flatMap(message => message.sources).filter(source => source.documentId !== null));
 
+  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
+
   useEffect(() => {
     console.log(sources);
   }, [sources]);
@@ -70,7 +72,7 @@ export function Chat({
         if (result?.type === 'search') {
           try {
             const searchResults = JSON.parse(result.results);
-            setSources(searchResults);
+            setSources(prevSources => [...prevSources, ...searchResults]);
           } catch (e) {
             console.error('Failed to parse search results:', e);
           }
@@ -107,6 +109,7 @@ export function Chat({
             isReadonly={isReadonly}
             isArtifactVisible={isArtifactVisible}
             isSourcesVisible={sources.length > 0}
+            setSelectedSourceId={setSelectedSourceId}
           />
 
         <form className={`flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl ${sources.length > 0 ? '-translate-x-[200px]' : ''}`}>
@@ -145,7 +148,12 @@ export function Chat({
         isReadonly={isReadonly}
       />
 
-      <Sources sources={sources} isVisible={sources.length > 0} />
+      <Sources 
+        sources={sources} 
+        isVisible={sources.length > 0} 
+        setSelectedSourceId={setSelectedSourceId} 
+        selectedSourceId={selectedSourceId ?? undefined}
+      />
     </>
   );
 }

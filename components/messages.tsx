@@ -5,6 +5,7 @@ import { Overview } from './overview';
 import { memo } from 'react';
 import { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
+import { Source } from './sources';
 
 interface MessagesProps {
   chatId: string;
@@ -20,6 +21,7 @@ interface MessagesProps {
   isReadonly: boolean;
   isArtifactVisible: boolean;
   isSourcesVisible: boolean;
+  setSelectedSourceId: (sourceId: string) => void;
 }
 
 function PureMessages({
@@ -31,6 +33,7 @@ function PureMessages({
   reload,
   isReadonly,
   isSourcesVisible,
+  setSelectedSourceId,
 }: MessagesProps) {
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
@@ -38,7 +41,7 @@ function PureMessages({
   return (
     <div
       ref={messagesContainerRef}
-      className={`flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-4 ${isSourcesVisible ? 'mr-[400px]' : ''}`}
+      className={`flex flex-col min-w-0 gap-6 flex-1 overflow-y-auto pt-4 ${isSourcesVisible ? 'mr-[400px]' : ''}`}
     >
       {messages.length === 0 && <Overview />}
 
@@ -56,6 +59,7 @@ function PureMessages({
           setMessages={setMessages}
           reload={reload}
           isReadonly={isReadonly}
+          setSelectedSourceId={setSelectedSourceId}
         />
       ))}
 

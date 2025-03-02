@@ -36,13 +36,29 @@ const components: Partial<Components> = {
       </span>
     );
   },
-  a: ({ node, children, ...props }) => {
+  a: ({ node, children, href, ...props }) => {
+    if (href?.startsWith('#')) {
+      return (
+        <button
+          onClick={() => {
+            console.log('clicked');
+            // Remove the # prefix to get the source ID
+            const sourceId = href.slice(1);
+            // Access setSelectedSourceId from context or props
+            props.setSelectedSourceId?.(sourceId);
+          }}
+          className="bg-yellow-100 dark:bg-yellow-900/30 px-0.5 rounded cursor-pointer hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
+        >
+          {children}
+        </button>
+      );
+    }
     return (
-      // @ts-expect-error
       <Link
         className="text-blue-500 hover:underline"
         target="_blank"
         rel="noreferrer"
+        href={href}
         {...props}
       >
         {children}
@@ -95,9 +111,15 @@ const components: Partial<Components> = {
 
 const remarkPlugins = [remarkGfm];
 
-const NonMemoizedMarkdown = ({ children }: { children: string }) => {
+const NonMemoizedMarkdown = ({ children, setSelectedSourceId }: { children: string, setSelectedSourceId?: (id: string) => void }) => {
   return (
-    <ReactMarkdown remarkPlugins={remarkPlugins} components={components}>
+    <ReactMarkdown 
+      remarkPlugins={remarkPlugins} 
+      components={{
+        ...components,
+        a: (props) => components.a?.({ ...props, setSelectedSourceId })
+      }}
+    >
       {children}
     </ReactMarkdown>
   );
@@ -105,5 +127,7 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
 
 export const Markdown = memo(
   NonMemoizedMarkdown,
-  (prevProps, nextProps) => prevProps.children === nextProps.children,
+  (prevProps, nextProps) => 
+    prevProps.children === nextProps.children &&
+    prevProps.setSelectedSourceId === nextProps.setSelectedSourceId
 );

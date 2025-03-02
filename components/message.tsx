@@ -25,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
 import { MessageReasoning } from './message-reasoning';
+import { Source } from './sources';
 
 const PurePreviewMessage = ({
   chatId,
@@ -34,6 +35,7 @@ const PurePreviewMessage = ({
   setMessages,
   reload,
   isReadonly,
+  setSelectedSourceId,
 }: {
   chatId: string;
   message: Message;
@@ -46,6 +48,7 @@ const PurePreviewMessage = ({
     chatRequestOptions?: ChatRequestOptions,
   ) => Promise<string | null | undefined>;
   isReadonly: boolean;
+  setSelectedSourceId: (sourceId: string) => void;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
 
@@ -118,7 +121,7 @@ const PurePreviewMessage = ({
                       message.role === 'user',
                   })}
                 >
-                  <Markdown>{message.content as string}</Markdown>
+                  <Markdown setSelectedSourceId={setSelectedSourceId}>{message.content as string}</Markdown>
                 </div>
               </div>
             )}
@@ -233,6 +236,7 @@ export const PreviewMessage = memo(
     )
       return false;
     if (!equal(prevProps.vote, nextProps.vote)) return false;
+      if (!equal(prevProps.setSelectedSourceId, nextProps.setSelectedSourceId)) return false;
 
     return true;
   },
