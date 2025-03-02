@@ -24,9 +24,14 @@ export const authConfig = {
         return true; // Always allow access to register and login pages
       }
 
+      // Allow access to root path (/) even when not authenticated
+      if (nextUrl.pathname === '/') {
+        return true;
+      }
+
+      // For other chat paths, require authentication
       if (isOnChat) {
-        if (isLoggedIn) return true;
-        return false; // Redirect unauthenticated users to login page
+        return isLoggedIn;
       }
 
       if (isLoggedIn) {
