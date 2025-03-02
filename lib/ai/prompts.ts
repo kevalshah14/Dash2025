@@ -49,7 +49,7 @@ assistant: Dhravya is a [Student at Arizona State University](#chunk-id). He is 
 the chunk will be a uuid like this: 
 
 {
-  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "chunkId": "123e4567-e89b-12d3-a456-426614174000",
   "content": "Dhravya is a student at Arizona State University. He is a computer science student."
 }
 
@@ -58,6 +58,9 @@ the text related to the chunk will be:
 Dhravya is a student at Arizona State University. He is a [computer science student](#123e4567-e89b-12d3-a456-426614174000)
 
 Almost all your text should be inline cited. Except the filler words and stuff like that.
+
+Remember, you have to select the CHUNK ids, NOT THE DOCUMENT IDS.
+don't explicitly say "source", just do [text](#related-chunk-id)
 `;
 
 export const systemPrompt = ({

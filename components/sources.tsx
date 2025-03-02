@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { memo, useMemo, useState, useEffect } from 'react';
+import React, { memo, useMemo, useState, useEffect } from 'react';
 import { useWindowSize } from 'usehooks-ts';
 import ReactMarkdown from 'react-markdown';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
@@ -26,11 +26,18 @@ function PureSources({ sources, isVisible, setSelectedSourceId, selectedSourceId
   const isMobile = windowWidth ? windowWidth < 768 : false;
   const [expandedSourceIds, setExpandedSourceIds] = useState<Set<string>>(new Set());
 
+  useEffect(() => {
+    console.log({selectedSourceId});
+  }, [selectedSourceId]);
+
   const displayedSources = useMemo(() => {
+    // First deduplicate sources based on sourceId
+    const deduplicatedSources = Array.from(new Set<Source>(sources.map(source => source)));
+
     if (!selectedSourceId) {
       // When no source is selected, show the best source per document
       const sourcesByDoc = new Map<string, Source>();
-      sources.forEach(source => {
+      deduplicatedSources.forEach(source => {
         const existing = sourcesByDoc.get(source.documentId);
         if (!existing || source.similarity > existing.similarity) {
           sourcesByDoc.set(source.documentId, source);
@@ -39,10 +46,16 @@ function PureSources({ sources, isVisible, setSelectedSourceId, selectedSourceId
       return Array.from(sourcesByDoc.values());
     } else {
       // When a source is selected, show all sources from that document
-      const selectedSource = sources.find(s => s.sourceId === selectedSourceId);
+      const selectedSource = deduplicatedSources.find(s => s.sourceId === selectedSourceId);
       if (!selectedSource) return [];
-      return sources.filter(s => s.documentId === selectedSource.documentId)
-        .sort((a, b) => b.similarity - a.similarity);
+      
+      // Get all sources from the same document
+      const relatedSources = deduplicatedSources.filter(s => 
+        s.documentId === selectedSource.documentId && 
+        s.sourceId !== selectedSource.sourceId
+      );
+      
+      return [selectedSource, ...relatedSources];
     }
   }, [sources, selectedSourceId]);
 
@@ -94,55 +107,62 @@ function PureSources({ sources, isVisible, setSelectedSourceId, selectedSourceId
 
           <main className="flex flex-col gap-4 p-4 overflow-y-auto">
             <AnimatePresence initial={false} mode="popLayout">
-              {displayedSources.map((source) => (
-                <motion.article
-                  key={source.sourceId}
-                  className={`rounded-lg border bg-card p-4 ${selectedSourceId === source.documentId ? 'ring-2 ring-primary' : ''}`}
-                  layout="position"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ 
-                    duration: 0.2,
-                    layout: { duration: 0.3 }
-                  }}
-                >
-                  <div 
-                    className="flex items-center justify-between cursor-pointer"
-                    onClick={() => toggleSource(source.sourceId)}
-                  >
-                    <div className="text-sm text-muted-foreground">
-                      Similarity: {(source.similarity * 100).toFixed(1)}%
-                    </div>
-                    <motion.div
-                      animate={{ rotate: expandedSourceIds.has(source.sourceId) ? 180 : 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </motion.div>
-                  </div>
-                  <motion.div 
-                    className="relative prose dark:prose-invert max-w-none text-sm mt-2 overflow-hidden"
-                    initial={false}
-                    animate={{ 
-                      height: expandedSourceIds.has(source.sourceId) ? "auto" : "4.5em",
-                      opacity: expandedSourceIds.has(source.sourceId) ? 1 : 0.7
-                    }}
+              {displayedSources.map((source, index) => (
+                <React.Fragment key={source.sourceId}>
+                  <motion.article
+                    className={`rounded-lg border bg-card p-4 ${selectedSourceId === source.sourceId ? 'ring-2 ring-primary' : ''}`}
+                    layout="position"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
                     transition={{ 
-                      height: { duration: 0.3 },
-                      opacity: { duration: 0.2 }
+                      duration: 0.2,
+                      layout: { duration: 0.3 }
                     }}
                   >
-                    <ReactMarkdown>
-                      {source.content}
-                    </ReactMarkdown>
-                    {!expandedSourceIds.has(source.sourceId) && (
-                      <div 
-                        className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-card to-transparent"
-                      />
-                    )}
-                  </motion.div>
-                </motion.article>
+                    <div 
+                      className="flex items-center justify-between cursor-pointer"
+                      onClick={() => toggleSource(source.sourceId)}
+                    >
+                      <div className="text-sm text-muted-foreground">
+                        Similarity: {(source.similarity * 100).toFixed(1)}%
+                      </div>
+                      <motion.div
+                        animate={{ rotate: expandedSourceIds.has(source.sourceId) ? 180 : 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </motion.div>
+                    </div>
+                    <motion.div 
+                      className="relative prose dark:prose-invert max-w-none text-sm mt-2 overflow-hidden"
+                      initial={false}
+                      animate={{ 
+                        height: expandedSourceIds.has(source.sourceId) ? "auto" : "4.5em",
+                        opacity: expandedSourceIds.has(source.sourceId) ? 1 : 0.7
+                      }}
+                      transition={{ 
+                        height: { duration: 0.3 },
+                        opacity: { duration: 0.2 }
+                      }}
+                    >
+                      <ReactMarkdown>
+                        {source.content}
+                      </ReactMarkdown>
+                      {!expandedSourceIds.has(source.sourceId) && (
+                        <div 
+                          className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-card to-transparent"
+                        />
+                      )}
+                    </motion.div>
+                  </motion.article>
+                  
+                  {selectedSourceId && index === 0 && displayedSources.length > 1 && (
+                    <div className="text-sm text-muted-foreground mt-4 mb-2">
+                      From the same document:
+                    </div>
+                  )}
+                </React.Fragment>
               ))}
             </AnimatePresence>
           </main>

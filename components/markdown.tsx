@@ -40,11 +40,14 @@ const components: Partial<Components> = {
     if (href?.startsWith('#')) {
       return (
         <button
+          id={href.slice(1)}
           onClick={() => {
             console.log('clicked');
             // Remove the # prefix to get the source ID
             const sourceId = href.slice(1);
             // Access setSelectedSourceId from context or props
+            console.log(sourceId);
+            // @ts-ignore
             props.setSelectedSourceId?.(sourceId);
           }}
           className="bg-yellow-100 dark:bg-yellow-900/30 px-0.5 rounded cursor-pointer hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
