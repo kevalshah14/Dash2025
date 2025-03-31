@@ -65,6 +65,12 @@ function PureChatHeader({
         />
       )}
 
+      <Button
+        className="order-1 md:order-4"
+        onClick={() => router.push('/dashboard')}
+      >
+        Dashboard
+      </Button>
     </header>
   );
 }
