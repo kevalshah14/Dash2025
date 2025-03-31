@@ -10,7 +10,6 @@ import {
   foreignKey,
   boolean,
   vector,
-  integer,
   real
 } from 'drizzle-orm/pg-core';
 

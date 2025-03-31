@@ -1,6 +1,6 @@
 'use server';
 
-import { generateText, Message } from 'ai';
+import { generateText, type Message } from 'ai';
 import { cookies } from 'next/headers';
 
 import {
@@ -10,11 +10,9 @@ import {
 } from '@/lib/db/queries';
 import { document, documentChunk } from '@/lib/db/schema';
 import db from '@/lib/db/queries';
-import { VisibilityType } from '@/components/visibility-selector';
+import type { VisibilityType } from '@/components/visibility-selector';
 import { myProvider } from '@/lib/ai/models';
-import { createDocument } from '@/lib/ai/tools/create-document';
 import { auth } from '../(auth)/auth';
-import { openai } from '@ai-sdk/openai';
 import OpenAI from 'openai';
 
 export async function saveChatModelAsCookie(model: string) {
@@ -61,7 +59,7 @@ export async function updateChatVisibility({
 
 async function chunkText(text: string) {
   // Use regex with 's' flag to properly handle newlines and whitespace
-  const regex = new RegExp('.{1,1000}', 'gs');
+  const regex = /.{1,1000}/gs;
   const chunks = text.match(regex);
 
   // Process chunks to preserve formatting and handle edge cases

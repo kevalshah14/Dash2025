@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { memo, useMemo, useState, useEffect } from 'react';
 import { useWindowSize } from 'usehooks-ts';
 import ReactMarkdown from 'react-markdown';
-import { ChevronDown, ChevronUp, X } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 
 export interface Source {
   sourceId: string;
